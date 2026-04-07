@@ -255,9 +255,8 @@ export default function Page() {
     {
       key: "softToWood",
       show: result.softToWood > 0,
-      text: `부드러운 목재 ${format(result.softToWood * 25)}개 → 목재 ${format(
-        result.softToWood * 50
-      )}개`,
+      text: `부드러운 목재 ${format(result.softToWood * 25)}개 → 목재 ${format(result.softToWood * 50)}개`,
+      sub: `교환 횟수: ${format(result.softToWood)}번 (25 → 50)`,
     },
     {
       key: "woodToPowder",
@@ -445,16 +444,26 @@ export default function Page() {
                       현재 보유 재료만으로는 제작할 수 없어요.
                     </div>
                   ) : (
-                    steps.map((step, index) => (
-                      <div
-                        key={step.key}
-                        className="rounded-xl border border-zinc-800 bg-zinc-900 p-3 text-sm text-zinc-200"
-                      >
-                        <span className="mr-2 font-semibold text-amber-300">{index + 1}단계</span>
-                        {step.text}
-                      </div>
-                    ))
-                  )}
+                      steps.map((step, index) => (
+                        <div
+                          key={step.key}
+                          className="rounded-xl border border-zinc-800 bg-zinc-900 p-3 text-sm text-zinc-200"
+                        >
+                          <div>
+                            <span className="mr-2 font-semibold text-amber-300">
+                              {index + 1}단계
+                            </span>
+                            {step.text}
+                          </div>
+
+                          {"sub" in step && step.sub && (
+                            <div className="mt-1 text-xs text-zinc-400">
+                              {step.sub}
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
                 </div>
               </div>
 
