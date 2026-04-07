@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+/* 기본 리셋 + 다크 배경 느낌 */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #0a0a0a;
+  color: white;
+}
+
+/* 입력창 기본 스타일 보정 */
+input {
+  outline: none;
+}
