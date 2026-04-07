@@ -245,46 +245,52 @@ export default function Page() {
   ] as const;
 
   const steps = [
-    {
-      key: "sturdyToWood",
-      show: result.sturdyToWood > 0,
-      text: `튼튼한 목재 ${format(result.sturdyToWood * 5)}개 → 목재 ${format(
-        result.sturdyToWood * 50
-      )}개`,
-    },
-    {
-      key: "softToWood",
-      show: result.softToWood > 0,
-      text: `부드러운 목재 ${format(result.softToWood * 25)}개 → 목재 ${format(result.softToWood * 50)}개`,
-      sub: `교환 횟수: ${format(result.softToWood)}번 (25 → 50)`,
-    },
-    {
-      key: "woodToPowder",
-      show: result.woodToPowder > 0,
-      text: `목재 ${format(result.woodToPowder * 100)}개 → 벌목의 가루 ${format(
-        result.woodToPowder * 80
-      )}개`,
-    },
-    {
-      key: "powderToAbydos",
-      show: result.powderToAbydos > 0,
-      text: `벌목의 가루 ${format(result.powderToAbydos * 100)}개 → 아비도스 목재 ${format(
-        result.powderToAbydos * 10
-      )}개`,
-    },
-    {
-      key: "powderToSoft",
-      show: result.powderToSoft > 0,
-      text: `벌목의 가루 ${format(result.powderToSoft * 100)}개 → 부드러운 목재 ${format(
-        result.powderToSoft * 50
-      )}개`,
-    },
-    {
-      key: "crafted",
-      show: result.crafted > 0,
-      text: `상급 아비도스 융화 재료 ${format(result.crafted * 10)}개 제작`,
-    },
-  ].filter((step) => step.show);
+  {
+    key: "sturdyToWood",
+    show: result.sturdyToWood > 0,
+    text: `튼튼한 목재 ${format(result.sturdyToWood * 5)}개 → 목재 ${format(
+      result.sturdyToWood * 50
+    )}개`,
+    sub: `교환 횟수: ${format(result.sturdyToWood)}번 (5 → 50)`,
+  },
+  {
+    key: "softToWood",
+    show: result.softToWood > 0,
+    text: `부드러운 목재 ${format(result.softToWood * 25)}개 → 목재 ${format(
+      result.softToWood * 50
+    )}개`,
+    sub: `교환 횟수: ${format(result.softToWood)}번 (25 → 50)`,
+  },
+  {
+    key: "woodToPowder",
+    show: result.woodToPowder > 0,
+    text: `목재 ${format(result.woodToPowder * 100)}개 → 벌목의 가루 ${format(
+      result.woodToPowder * 80
+    )}개`,
+    sub: `교환 횟수: ${format(result.woodToPowder)}번 (100 → 80)`,
+  },
+  {
+    key: "powderToAbydos",
+    show: result.powderToAbydos > 0,
+    text: `벌목의 가루 ${format(result.powderToAbydos * 100)}개 → 아비도스 목재 ${format(
+      result.powderToAbydos * 10
+    )}개`,
+    sub: `교환 횟수: ${format(result.powderToAbydos)}번 (100 → 10)`,
+  },
+  {
+    key: "powderToSoft",
+    show: result.powderToSoft > 0,
+    text: `벌목의 가루 ${format(result.powderToSoft * 100)}개 → 부드러운 목재 ${format(
+      result.powderToSoft * 50
+    )}개`,
+    sub: `교환 횟수: ${format(result.powderToSoft)}번 (100 → 50)`,
+  },
+  {
+    key: "crafted",
+    show: result.crafted > 0,
+    text: `상급 아비도스 융화 재료 ${format(result.crafted * 10)}개 제작`,
+  },
+].filter((step) => step.show);
 
   const nextSoftShortage = Math.max(0, RECIPE.soft - result.leftovers.soft);
   const nextMarketSets = ceilDiv(nextSoftShortage, 100);
