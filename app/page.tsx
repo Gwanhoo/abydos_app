@@ -9,6 +9,17 @@ type Materials = {
   sturdy: number;
 };
 
+type RecipeKey = "upper" | "normal";
+
+type Recipe = {
+  key: RecipeKey;
+  label: string;
+  shortLabel: string;
+  abydos: number;
+  soft: number;
+  wood: number;
+};
+
 type Plan = {
   maxCraft: number; // 세트 수
   sturdyToWood: number;
@@ -27,10 +38,23 @@ type Plan = {
   };
 };
 
-const RECIPE = {
-  abydos: 43,
-  soft: 59,
-  wood: 112,
+const RECIPES: Record<RecipeKey, Recipe> = {
+  upper: {
+    key: "upper",
+    label: "상급 아비도스 융화 재료",
+    shortLabel: "상비도스",
+    abydos: 43,
+    soft: 59,
+    wood: 112,
+  },
+  normal: {
+    key: "normal",
+    label: "아비도스 융화 재료",
+    shortLabel: "아비도스",
+    abydos: 33,
+    soft: 45,
+    wood: 86,
+  },
 };
 
 function toInt(value: string) {
@@ -52,10 +76,10 @@ function parseFormatted(value: string) {
   return value.replace(/[^0-9]/g, "");
 }
 
-function canCraftWithPlan(input: Materials, targetSets: number): Plan | null {
-  const needA = RECIPE.abydos * targetSets;
-  const needS = RECIPE.soft * targetSets;
-  const needW = RECIPE.wood * targetSets;
+function canCraftWithPlan(input: Materials, targetSets: number, recipe: Recipe): Plan | null {
+  const needA = recipe.abydos * targetSets;
+  const needS = recipe.soft * targetSets;
+  const needW = recipe.wood * targetSets;
 
   const sturdyToWood = Math.floor(input.sturdy / 5);
   const sturdyLeft = input.sturdy % 5;
@@ -69,7 +93,6 @@ function canCraftWithPlan(input: Materials, targetSets: number): Plan | null {
   // 경매장 구매는 최대 제작량 계산에 포함하지 않음
   const baseSoft = input.soft;
 
-  // 필요한 soft가 부족하면 powder -> soft로 메울 수 있는 범위 탐색
   const minPowderToSoft = ceilDiv(Math.max(0, needS - baseSoft), 50);
   const maxPowderToSoft = minPowderToSoft + 12;
 
@@ -77,7 +100,6 @@ function canCraftWithPlan(input: Materials, targetSets: number): Plan | null {
     const softFromPowder = powderToSoft * 50;
     const totalSoftPool = baseSoft + softFromPowder;
 
-    // 제작에 필요한 soft를 남기고 남는 soft만 wood로 전환 가능
     const maxSoftToWood = Math.floor(Math.max(0, totalSoftPool - needS) / 25);
 
     for (let softToWood = 0; softToWood <= maxSoftToWood; softToWood += 1) {
@@ -155,18 +177,21 @@ function canCraftWithPlan(input: Materials, targetSets: number): Plan | null {
   return best;
 }
 
-function calculatePlan(input: Materials): Plan {
+function calculatePlan(input: Materials, recipe: Recipe): Plan {
   const sturdyToWood = Math.floor(input.sturdy / 5);
   const sturdyLeft = input.sturdy % 5;
   const baseWood = input.wood + sturdyToWood * 50;
 
   const upperBound =
-    Math.floor((input.abydos + Math.floor((baseWood * 2) / 25) + Math.floor(input.soft / 5)) / 43) + 300;
+    Math.floor(
+      (input.abydos + Math.floor((baseWood * 2) / 25) + Math.floor(input.soft / 5)) /
+        recipe.abydos
+    ) + 300;
 
   let best: Plan | null = null;
 
   for (let targetSets = 0; targetSets <= upperBound; targetSets += 1) {
-    const candidate = canCraftWithPlan(input, targetSets);
+    const candidate = canCraftWithPlan(input, targetSets, recipe);
     if (candidate) {
       best = candidate;
     }
@@ -203,6 +228,7 @@ export default function Page() {
   const [copied, setCopied] = useState(false);
   const [showPowderPlan, setShowPowderPlan] = useState(true);
   const [showMarketPlan, setShowMarketPlan] = useState(true);
+  const [recipeKey, setRecipeKey] = useState<RecipeKey>("upper");
 
   useEffect(() => {
     const saved = localStorage.getItem("abydos-calculator-form");
@@ -225,6 +251,19 @@ export default function Page() {
     localStorage.setItem("abydos-calculator-form", JSON.stringify(form));
   }, [form]);
 
+  useEffect(() => {
+    const savedRecipe = localStorage.getItem("abydos-calculator-recipe");
+    if (savedRecipe === "upper" || savedRecipe === "normal") {
+      setRecipeKey(savedRecipe);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("abydos-calculator-recipe", recipeKey);
+  }, [recipeKey]);
+
+  const recipe = RECIPES[recipeKey];
+
   const materials = useMemo<Materials>(
     () => ({
       abydos: toInt(form.abydos),
@@ -235,7 +274,7 @@ export default function Page() {
     [form]
   );
 
-  const result = useMemo(() => calculatePlan(materials), [materials]);
+  const result = useMemo(() => calculatePlan(materials, recipe), [materials, recipe]);
 
   const rows = [
     { key: "abydos", label: "아비도스 목재", value: form.abydos },
@@ -245,54 +284,54 @@ export default function Page() {
   ] as const;
 
   const steps = [
-  {
-    key: "sturdyToWood",
-    show: result.sturdyToWood > 0,
-    text: `튼튼한 목재 ${format(result.sturdyToWood * 5)}개 → 목재 ${format(
-      result.sturdyToWood * 50
-    )}개`,
-    sub: `교환 횟수: ${format(result.sturdyToWood)}번 (5 → 50)`,
-  },
-  {
-    key: "softToWood",
-    show: result.softToWood > 0,
-    text: `부드러운 목재 ${format(result.softToWood * 25)}개 → 목재 ${format(
-      result.softToWood * 50
-    )}개`,
-    sub: `교환 횟수: ${format(result.softToWood)}번 (25 → 50)`,
-  },
-  {
-    key: "woodToPowder",
-    show: result.woodToPowder > 0,
-    text: `목재 ${format(result.woodToPowder * 100)}개 → 벌목의 가루 ${format(
-      result.woodToPowder * 80
-    )}개`,
-    sub: `교환 횟수: ${format(result.woodToPowder)}번 (100 → 80)`,
-  },
-  {
-    key: "powderToAbydos",
-    show: result.powderToAbydos > 0,
-    text: `벌목의 가루 ${format(result.powderToAbydos * 100)}개 → 아비도스 목재 ${format(
-      result.powderToAbydos * 10
-    )}개`,
-    sub: `교환 횟수: ${format(result.powderToAbydos)}번 (100 → 10)`,
-  },
-  {
-    key: "powderToSoft",
-    show: result.powderToSoft > 0,
-    text: `벌목의 가루 ${format(result.powderToSoft * 100)}개 → 부드러운 목재 ${format(
-      result.powderToSoft * 50
-    )}개`,
-    sub: `교환 횟수: ${format(result.powderToSoft)}번 (100 → 50)`,
-  },
-  {
-    key: "crafted",
-    show: result.crafted > 0,
-    text: `상급 아비도스 융화 재료 ${format(result.crafted * 10)}개 제작`,
-  },
-].filter((step) => step.show);
+    {
+      key: "sturdyToWood",
+      show: result.sturdyToWood > 0,
+      text: `튼튼한 목재 ${format(result.sturdyToWood * 5)}개 → 목재 ${format(
+        result.sturdyToWood * 50
+      )}개`,
+      sub: `교환 횟수: ${format(result.sturdyToWood)}번 (5 → 50)`,
+    },
+    {
+      key: "softToWood",
+      show: result.softToWood > 0,
+      text: `부드러운 목재 ${format(result.softToWood * 25)}개 → 목재 ${format(
+        result.softToWood * 50
+      )}개`,
+      sub: `교환 횟수: ${format(result.softToWood)}번 (25 → 50)`,
+    },
+    {
+      key: "woodToPowder",
+      show: result.woodToPowder > 0,
+      text: `목재 ${format(result.woodToPowder * 100)}개 → 벌목의 가루 ${format(
+        result.woodToPowder * 80
+      )}개`,
+      sub: `교환 횟수: ${format(result.woodToPowder)}번 (100 → 80)`,
+    },
+    {
+      key: "powderToAbydos",
+      show: result.powderToAbydos > 0,
+      text: `벌목의 가루 ${format(result.powderToAbydos * 100)}개 → 아비도스 목재 ${format(
+        result.powderToAbydos * 10
+      )}개`,
+      sub: `교환 횟수: ${format(result.powderToAbydos)}번 (100 → 10)`,
+    },
+    {
+      key: "powderToSoft",
+      show: result.powderToSoft > 0,
+      text: `벌목의 가루 ${format(result.powderToSoft * 100)}개 → 부드러운 목재 ${format(
+        result.powderToSoft * 50
+      )}개`,
+      sub: `교환 횟수: ${format(result.powderToSoft)}번 (100 → 50)`,
+    },
+    {
+      key: "crafted",
+      show: result.crafted > 0,
+      text: `${recipe.label} ${format(result.crafted * 10)}개 제작`,
+    },
+  ].filter((step) => step.show);
 
-  const nextSoftShortage = Math.max(0, RECIPE.soft - result.leftovers.soft);
+  const nextSoftShortage = Math.max(0, recipe.soft - result.leftovers.soft);
   const nextMarketSets = ceilDiv(nextSoftShortage, 100);
   const nextMarketBought = nextMarketSets * 100;
   const nextPowderToSoft = ceilDiv(nextSoftShortage, 50);
@@ -301,7 +340,7 @@ export default function Page() {
 
   const handleCopy = async () => {
     const summary = [
-      "[상급 아비도스 융화 재료 계산 결과]",
+      `[${recipe.label} 계산 결과]`,
       `최대 제작 가능: ${format(result.maxCraft * 10)}개 (${format(result.maxCraft)}세트)`,
       "",
       "추천 교환 순서:",
@@ -309,7 +348,9 @@ export default function Page() {
       "",
       "보조 전략:",
       `- 다음 1세트 기준 부드러운 목재 부족: ${format(nextSoftShortage)}개`,
-      `- 벌목의 가루 충당 시: ${format(nextPowderToSoft)}회, 벌목의 가루 ${format(nextPowderUsed)}개`,
+      `- 벌목의 가루 충당 시: ${format(nextPowderToSoft)}회, 벌목의 가루 ${format(
+        nextPowderUsed
+      )}개`,
       `- 경매장 구매 시: ${format(nextMarketSets)}세트, 총 ${format(nextMarketBought)}개`,
       "",
       "제작 후 남는 재료:",
@@ -334,17 +375,50 @@ export default function Page() {
     <main className="min-h-screen bg-zinc-950 text-zinc-100">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10 lg:px-8">
         <section className="overflow-hidden rounded-3xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-zinc-950 p-6 shadow-2xl sm:p-8">
-          <div className="flex flex-col gap-4">
-            <span className="w-fit rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-300">
-              Lost Ark 재료 최적화 계산기
-            </span>
-            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              상급 아비도스 융화 재료 최대 제작 계산기
-            </h1>
-            <p className="max-w-3xl text-sm leading-6 text-zinc-400 sm:text-base">
-              보유 중인 아비도스 목재, 부드러운 목재, 목재, 튼튼한 목재를 입력하면 최대 제작량과 교환
-              전략을 바로 계산해준다.
-            </p>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col gap-4">
+              <span className="w-fit rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-300">
+                Lost Ark 재료 최적화 계산기
+              </span>
+              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                {recipe.label} 최대 제작 계산기
+              </h1>
+              <p className="max-w-3xl text-sm leading-6 text-zinc-400 sm:text-base">
+                보유 중인 아비도스 목재, 부드러운 목재, 목재, 튼튼한 목재를 입력하면 {recipe.label}의 최대
+                제작량과 교환 전략을 바로 계산해준다.
+              </p>
+            </div>
+
+            <div className="shrink-0">
+              <div className="rounded-full border border-zinc-700 bg-zinc-900/80 p-1 shadow-lg">
+                <div className="relative flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => setRecipeKey("upper")}
+                    className={`relative z-10 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      recipeKey === "upper" ? "text-zinc-950" : "text-zinc-300"
+                    }`}
+                  >
+                    상비도스
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRecipeKey("normal")}
+                    className={`relative z-10 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      recipeKey === "normal" ? "text-zinc-950" : "text-zinc-300"
+                    }`}
+                  >
+                    아비도스
+                  </button>
+
+                  <div
+                    className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full bg-emerald-300 transition-all duration-300 ${
+                      recipeKey === "upper" ? "left-1" : "left-[calc(50%+2px)]"
+                    }`}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -378,7 +452,10 @@ export default function Page() {
             <div className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4 text-sm text-zinc-400">
               <div className="mb-2 font-medium text-zinc-200">기준 공식</div>
               <div className="space-y-1 leading-6">
-                <p>상급 아비도스 융화 재료 1세트(10개) = 아비도스 목재 43 + 부드러운 목재 59 + 목재 112</p>
+                <p>
+                  {recipe.label} 1세트(10개) = 아비도스 목재 {recipe.abydos} + 부드러운 목재 {recipe.soft} +
+                  목재 {recipe.wood}
+                </p>
                 <p>튼튼한 목재 5 → 목재 50</p>
                 <p>부드러운 목재 25 → 목재 50</p>
                 <p>목재 100 → 벌목의 가루 80</p>
@@ -450,26 +527,22 @@ export default function Page() {
                       현재 보유 재료만으로는 제작할 수 없어요.
                     </div>
                   ) : (
-                      steps.map((step, index) => (
-                        <div
-                          key={step.key}
-                          className="rounded-xl border border-zinc-800 bg-zinc-900 p-3 text-sm text-zinc-200"
-                        >
-                          <div>
-                            <span className="mr-2 font-semibold text-amber-300">
-                              {index + 1}단계
-                            </span>
-                            {step.text}
-                          </div>
-
-                          {"sub" in step && step.sub && (
-                            <div className="mt-1 text-xs text-zinc-400">
-                              {step.sub}
-                            </div>
-                          )}
+                    steps.map((step, index) => (
+                      <div
+                        key={step.key}
+                        className="rounded-xl border border-zinc-800 bg-zinc-900 p-3 text-sm text-zinc-200"
+                      >
+                        <div>
+                          <span className="mr-2 font-semibold text-amber-300">{index + 1}단계</span>
+                          {step.text}
                         </div>
-                      ))
-                    )}
+
+                        {"sub" in step && step.sub && (
+                          <div className="mt-1 text-xs text-zinc-400">{step.sub}</div>
+                        )}
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
 
@@ -484,7 +557,9 @@ export default function Page() {
                       <p>확보한 부드러운 목재: {format(nextSoftMade)}개</p>
 
                       {nextPowderToSoft === 0 && (
-                        <p className="text-xs text-zinc-500">현재 남은 부드러운 목재로 다음 1세트도 바로 제작 가능해요.</p>
+                        <p className="text-xs text-zinc-500">
+                          현재 남은 부드러운 목재로 다음 1세트도 바로 제작 가능해요.
+                        </p>
                       )}
                     </div>
                   </div>
@@ -500,7 +575,9 @@ export default function Page() {
                       <p>총 구매량: {format(nextMarketBought)}개</p>
 
                       {nextMarketSets === 0 && (
-                        <p className="text-xs text-zinc-500">현재 남은 부드러운 목재로 다음 1세트도 바로 제작 가능해요.</p>
+                        <p className="text-xs text-zinc-500">
+                          현재 남은 부드러운 목재로 다음 1세트도 바로 제작 가능해요.
+                        </p>
                       )}
                     </div>
 
