@@ -411,7 +411,7 @@ export default function Page() {
           throw new Error(data?.message ?? "시세를 불러오지 못했습니다.");
         }
 
-        const data = (await res.json()) as Prices;
+        const data = await res.json();
         setPrices(data);
       } catch (error) {
         const message =
@@ -422,7 +422,16 @@ export default function Page() {
       }
     }
 
+
     loadPrices();
+
+
+    const interval = setInterval(() => {
+      loadPrices();
+    }, 30000);
+
+  
+    return () => clearInterval(interval);
   }, []);
 
   const materials = useMemo<Materials>(
