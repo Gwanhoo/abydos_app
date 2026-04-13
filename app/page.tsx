@@ -9,8 +9,10 @@ type Materials = {
   sturdy: number;
 };
 
+type RecipeKey = "normal" | "advanced";
+
 type Recipe = {
-  key: "normal" | "advanced";
+  key: RecipeKey;
   title: string;
   abydos: number;
   soft: number;
@@ -68,7 +70,7 @@ const SELL_FEE_RATE = 0.05;
 const MATERIAL_BUNDLE_SIZE = 100;
 const PRODUCT_COUNT_PER_SET = 10;
 
-const RECIPES: Record<Recipe["key"], Recipe> = {
+const RECIPES: Record<RecipeKey, Recipe> = {
   normal: {
     key: "normal",
     title: "아비도스 융화 재료",
@@ -115,14 +117,13 @@ function applySellFee(value: number) {
   return Math.floor(value * (1 - SELL_FEE_RATE));
 }
 
-// 재료는 판매가 100개 단위만 가능
+// 재료 판매는 100개 단위만 가능
 function bundledSellValue(quantity: number, bundlePrice: number) {
   const sellableBundles = Math.floor(quantity / MATERIAL_BUNDLE_SIZE);
   return applySellFee(sellableBundles * bundlePrice);
 }
 
-// 교환 손익 표시는 비례 가치 기준으로 본다.
-// 실제 판매는 100개 단위지만, 교환 자체의 경제성 판단을 위해 단위가치로 환산.
+// 교환 손익 체크용 비례 가치
 function proportionalValue(quantity: number, bundlePrice: number) {
   return (quantity / MATERIAL_BUNDLE_SIZE) * bundlePrice;
 }
@@ -351,7 +352,7 @@ function getConversionChecks(prices: Prices): ConversionCheck[] {
 }
 
 export default function Page() {
-  const [target, setTarget] = useState<Recipe["key"]>("advanced");
+  const [target, setTarget] = useState<RecipeKey>("advanced");
   const [form, setForm] = useState({
     abydos: "0",
     soft: "0",
@@ -435,14 +436,15 @@ export default function Page() {
   );
 
   const recipe = useMemo(() => {
-  const base = RECIPES[target];
-  const discount = toInt(craftFeeDiscount);
+    const base = RECIPES[target];
+    const discount = toInt(craftFeeDiscount);
 
-  return {
-    ...base,
-    craftFeePerSet: applyCraftFeeDiscount(base.craftFeePerSet, discount),
-  };
-}, [target, craftFeeDiscount]);
+    return {
+      ...base,
+      craftFeePerSet: applyCraftFeeDiscount(base.craftFeePerSet, discount),
+    };
+  }, [target, craftFeeDiscount]);
+
   const result = useMemo(() => calculatePlan(materials, recipe), [materials, recipe]);
   const economy = useMemo(
     () => calculateEconomy(materials, result, recipe, prices),
@@ -657,7 +659,10 @@ export default function Page() {
             <div className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4 text-sm text-zinc-400">
               <div className="mb-2 font-medium text-zinc-200">현재 기준 공식</div>
               <div className="space-y-1 leading-6">
-                <p>{recipe.title} 1세트(10개) = 아비도스 목재 {recipe.abydos} + 부드러운 목재 {recipe.soft} + 목재 {recipe.wood}</p>
+                <p>
+                  {recipe.title} 1세트(10개) = 아비도스 목재 {recipe.abydos} + 부드러운 목재 {recipe.soft} +
+                  목재 {recipe.wood}
+                </p>
                 <p>기본 제작 수수료: {format(RECIPES[target].craftFeePerSet)} 골드 / 세트</p>
                 <p>수수료 감소 적용 후: {format(recipe.craftFeePerSet)} 골드 / 세트</p>
                 <p>벌목 재료 판매 단위: 100개</p>
@@ -762,7 +767,8 @@ export default function Page() {
                     >
                       <div className="font-medium text-zinc-200">{item.label}</div>
                       <div className="mt-1 text-zinc-400">
-                        교환 전 가치 {format(Math.floor(item.fromValue))} → 교환 후 가치 {format(Math.floor(item.toValue))}
+                        교환 전 가치 {format(Math.floor(item.fromValue))} → 교환 후 가치{" "}
+                        {format(Math.floor(item.toValue))}
                       </div>
                       <div
                         className={`mt-1 font-semibold ${
@@ -788,7 +794,9 @@ export default function Page() {
                       <p>확보한 부드러운 목재: {format(nextSoftMade)}개</p>
 
                       {nextPowderToSoft === 0 && (
-                        <p className="text-xs text-zinc-500">현재 남은 부드러운 목재로 다음 1세트도 바로 제작 가능해요.</p>
+                        <p className="text-xs text-zinc-500">
+                          현재 남은 부드러운 목재로 다음 1세트도 바로 제작 가능해요.
+                        </p>
                       )}
                     </div>
                   </div>
@@ -804,7 +812,9 @@ export default function Page() {
                       <p>총 구매량: {format(nextMarketBought)}개</p>
 
                       {nextMarketSets === 0 && (
-                        <p className="text-xs text-zinc-500">현재 남은 부드러운 목재로 다음 1세트도 바로 제작 가능해요.</p>
+                        <p className="text-xs text-zinc-500">
+                          현재 남은 부드러운 목재로 다음 1세트도 바로 제작 가능해요.
+                        </p>
                       )}
                     </div>
 
