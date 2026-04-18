@@ -128,7 +128,11 @@ function proportionalValue(quantity: number, bundlePrice: number) {
   return (quantity / MATERIAL_BUNDLE_SIZE) * bundlePrice;
 }
 
-function canCraftWithPlan(input: Materials, targetSets: number, recipe: Recipe): Plan | null {
+function canCraftWithPlan(
+  input: Materials,
+  targetSets: number,
+  recipe: Recipe,
+): Plan | null {
   const needA = recipe.abydos * targetSets;
   const needS = recipe.soft * targetSets;
   const needW = recipe.wood * targetSets;
@@ -146,7 +150,11 @@ function canCraftWithPlan(input: Materials, targetSets: number, recipe: Recipe):
   const minPowderToSoft = ceilDiv(Math.max(0, needS - baseSoft), 50);
   const maxPowderToSoft = minPowderToSoft + 12;
 
-  for (let powderToSoft = minPowderToSoft; powderToSoft <= maxPowderToSoft; powderToSoft += 1) {
+  for (
+    let powderToSoft = minPowderToSoft;
+    powderToSoft <= maxPowderToSoft;
+    powderToSoft += 1
+  ) {
     const softFromPowder = powderToSoft * 50;
     const totalSoftPool = baseSoft + softFromPowder;
 
@@ -206,7 +214,10 @@ function canCraftWithPlan(input: Materials, targetSets: number, recipe: Recipe):
         candidate.woodToPowder;
 
       const bestLeftoverSum =
-        best.leftovers.abydos + best.leftovers.soft + best.leftovers.wood + best.powderLeft;
+        best.leftovers.abydos +
+        best.leftovers.soft +
+        best.leftovers.wood +
+        best.powderLeft;
       const candidateLeftoverSum =
         candidate.leftovers.abydos +
         candidate.leftovers.soft +
@@ -232,8 +243,10 @@ function calculatePlan(input: Materials, recipe: Recipe): Plan {
 
   const upperBound =
     Math.floor(
-      (input.abydos + Math.floor((baseWood * 2) / 25) + Math.floor(input.soft / 5)) /
-        Math.max(1, recipe.abydos)
+      (input.abydos +
+        Math.floor((baseWood * 2) / 25) +
+        Math.floor(input.soft / 5)) /
+        Math.max(1, recipe.abydos),
     ) + 300;
 
   let best: Plan | null = null;
@@ -270,7 +283,7 @@ function calculateEconomy(
   materials: Materials,
   result: Plan,
   recipe: Recipe,
-  prices: Prices
+  prices: Prices,
 ): Economy {
   const rawSellValue =
     bundledSellValue(materials.abydos, prices.abydosWood) +
@@ -415,22 +428,21 @@ export default function Page() {
         setPrices(data);
       } catch (error) {
         const message =
-          error instanceof Error ? error.message : "시세를 불러오지 못했습니다.";
+          error instanceof Error
+            ? error.message
+            : "시세를 불러오지 못했습니다.";
         setPriceError(message);
       } finally {
         setIsLoadingPrices(false);
       }
     }
 
-
     loadPrices();
-
 
     const interval = setInterval(() => {
       loadPrices();
     }, 30000);
 
-  
     return () => clearInterval(interval);
   }, []);
 
@@ -441,7 +453,7 @@ export default function Page() {
       wood: toInt(form.wood),
       sturdy: toInt(form.sturdy),
     }),
-    [form]
+    [form],
   );
 
   const recipe = useMemo(() => {
@@ -454,10 +466,13 @@ export default function Page() {
     };
   }, [target, craftFeeDiscount]);
 
-  const result = useMemo(() => calculatePlan(materials, recipe), [materials, recipe]);
+  const result = useMemo(
+    () => calculatePlan(materials, recipe),
+    [materials, recipe],
+  );
   const economy = useMemo(
     () => calculateEconomy(materials, result, recipe, prices),
-    [materials, result, recipe, prices]
+    [materials, result, recipe, prices],
   );
   const conversionChecks = useMemo(() => getConversionChecks(prices), [prices]);
 
@@ -473,7 +488,7 @@ export default function Page() {
       key: "sturdyToWood",
       show: result.sturdyToWood > 0,
       text: `튼튼한 목재 ${format(result.sturdyToWood * 5)}개 → 목재 ${format(
-        result.sturdyToWood * 50
+        result.sturdyToWood * 50,
       )}개`,
       sub: `교환 횟수: ${format(result.sturdyToWood)}번 (5 → 50)`,
     },
@@ -481,7 +496,7 @@ export default function Page() {
       key: "softToWood",
       show: result.softToWood > 0,
       text: `부드러운 목재 ${format(result.softToWood * 25)}개 → 목재 ${format(
-        result.softToWood * 50
+        result.softToWood * 50,
       )}개`,
       sub: `교환 횟수: ${format(result.softToWood)}번 (25 → 50)`,
     },
@@ -489,7 +504,7 @@ export default function Page() {
       key: "woodToPowder",
       show: result.woodToPowder > 0,
       text: `목재 ${format(result.woodToPowder * 100)}개 → 벌목의 가루 ${format(
-        result.woodToPowder * 80
+        result.woodToPowder * 80,
       )}개`,
       sub: `교환 횟수: ${format(result.woodToPowder)}번 (100 → 80)`,
     },
@@ -497,7 +512,7 @@ export default function Page() {
       key: "powderToAbydos",
       show: result.powderToAbydos > 0,
       text: `벌목의 가루 ${format(result.powderToAbydos * 100)}개 → 아비도스 목재 ${format(
-        result.powderToAbydos * 10
+        result.powderToAbydos * 10,
       )}개`,
       sub: `교환 횟수: ${format(result.powderToAbydos)}번 (100 → 10)`,
     },
@@ -505,7 +520,7 @@ export default function Page() {
       key: "powderToSoft",
       show: result.powderToSoft > 0,
       text: `벌목의 가루 ${format(result.powderToSoft * 100)}개 → 부드러운 목재 ${format(
-        result.powderToSoft * 50
+        result.powderToSoft * 50,
       )}개`,
       sub: `교환 횟수: ${format(result.powderToSoft)}번 (100 → 50)`,
     },
@@ -529,7 +544,9 @@ export default function Page() {
       `최대 제작 가능: ${format(result.maxCraft * PRODUCT_COUNT_PER_SET)}개 (${format(result.maxCraft)}세트)`,
       "",
       "추천 교환 순서:",
-      ...(steps.length > 0 ? steps.map((step, i) => `${i + 1}. ${step.text}`) : ["- 제작 불가"]),
+      ...(steps.length > 0
+        ? steps.map((step, i) => `${i + 1}. ${step.text}`)
+        : ["- 제작 불가"]),
       "",
       `재료 판매 가치: ${format(economy.rawSellValue)} 골드`,
       `제작 후 판매 가치: ${format(economy.finalCraftValue)} 골드`,
@@ -554,12 +571,14 @@ export default function Page() {
             <span className="w-fit rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-300">
               Lost Ark 재료 최적화 계산기
             </span>
+
             <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
               최대 제작 가이드 + 손익 체크
             </h1>
+
             <p className="max-w-3xl text-sm leading-6 text-zinc-400 sm:text-base">
-              기존 최대 제작 수량과 교환 순서는 유지하고, 최저가 기준으로 재료 판매가 유리한지
-              제작 후 판매가 유리한지만 함께 보여준다.
+              기존 최대 제작 수량과 교환 순서는 유지하고, 최저가 기준으로 재료
+              판매가 유리한지 제작 후 판매가 유리한지만 함께 보여줍니다.
             </p>
 
             <div className="flex flex-wrap gap-3">
@@ -574,6 +593,7 @@ export default function Page() {
               >
                 아비도스
               </button>
+
               <button
                 type="button"
                 onClick={() => setTarget("advanced")}
@@ -599,148 +619,318 @@ export default function Page() {
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
                 <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-3">
                   <div className="text-xs text-zinc-400">목재 (100개)</div>
-                  <div className="mt-1 text-lg font-semibold">{format(prices.wood)} 골드</div>
+                  <div className="mt-1 text-lg font-semibold">
+                    {format(prices.wood)} 골드
+                  </div>
                 </div>
+
                 <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-3">
-                  <div className="text-xs text-zinc-400">부드러운 목재 (100개)</div>
-                  <div className="mt-1 text-lg font-semibold">{format(prices.soft)} 골드</div>
+                  <div className="text-xs text-zinc-400">
+                    부드러운 목재 (100개)
+                  </div>
+                  <div className="mt-1 text-lg font-semibold">
+                    {format(prices.soft)} 골드
+                  </div>
                 </div>
+
                 <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-3">
-                  <div className="text-xs text-zinc-400">튼튼한 목재 (100개)</div>
-                  <div className="mt-1 text-lg font-semibold">{format(prices.sturdy)} 골드</div>
+                  <div className="text-xs text-zinc-400">
+                    튼튼한 목재 (100개)
+                  </div>
+                  <div className="mt-1 text-lg font-semibold">
+                    {format(prices.sturdy)} 골드
+                  </div>
                 </div>
+
                 <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-3">
-                  <div className="text-xs text-zinc-400">아비도스 목재 (100개)</div>
-                  <div className="mt-1 text-lg font-semibold">{format(prices.abydosWood)} 골드</div>
+                  <div className="text-xs text-zinc-400">
+                    아비도스 목재 (100개)
+                  </div>
+                  <div className="mt-1 text-lg font-semibold">
+                    {format(prices.abydosWood)} 골드
+                  </div>
                 </div>
+
                 <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-3">
-                  <div className="text-xs text-zinc-400">아비도스 융화 재료 (1개)</div>
-                  <div className="mt-1 text-lg font-semibold">{format(prices.normalFusion)} 골드</div>
+                  <div className="text-xs text-zinc-400">
+                    아비도스 융화 재료 (1개)
+                  </div>
+                  <div className="mt-1 text-lg font-semibold">
+                    {format(prices.normalFusion)} 골드
+                  </div>
                 </div>
+
                 <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-3">
-                  <div className="text-xs text-zinc-400">상급 아비도스 융화 재료 (1개)</div>
-                  <div className="mt-1 text-lg font-semibold">{format(prices.advancedFusion)} 골드</div>
+                  <div className="text-xs text-zinc-400">
+                    상급 아비도스 융화 재료 (1개)
+                  </div>
+                  <div className="mt-1 text-lg font-semibold">
+                    {format(prices.advancedFusion)} 골드
+                  </div>
                 </div>
               </div>
             )}
           </div>
         </section>
 
-        <section className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr] lg:gap-6">
+        <section className="grid items-start gap-4 lg:grid-cols-[1.02fr_0.98fr] lg:gap-6">
           <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-5 shadow-xl backdrop-blur sm:p-6">
-            <div className="mb-5">
-              <h2 className="text-xl font-semibold">재료 입력</h2>
-              <div className="mt-4">
-                <label className="flex flex-col gap-2">
-                  <span className="text-sm font-medium text-zinc-300">제작 수수료 감소 (%)</span>
-                  <input
-                    inputMode="numeric"
-                    value={format(toInt(craftFeeDiscount))}
-                    onChange={(e) => setCraftFeeDiscount(parseFormatted(e.target.value))}
-                    placeholder="예: 17"
-                    className="h-12 rounded-2xl border border-zinc-700 bg-zinc-950 px-4 text-base outline-none transition focus:border-amber-300 focus:ring-2 focus:ring-amber-500/30"
-                  />
-                </label>
-              </div>
-              <p className="mt-1 text-sm text-zinc-400">숫자를 입력하면 결과가 바로 갱신된다.</p>
-            </div>
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-semibold">재료 입력</h2>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              {rows.map((row) => (
-                <label key={row.key} className="flex flex-col gap-2">
-                  <span className="text-sm font-medium text-zinc-300">{row.label}</span>
-                  <input
-                    inputMode="numeric"
-                    value={format(toInt(row.value))}
-                    onChange={(e) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        [row.key]: parseFormatted(e.target.value),
-                      }))
-                    }
-                    placeholder="보유 개수 입력"
-                    className="h-12 rounded-2xl border border-zinc-700 bg-zinc-950 px-4 text-base outline-none transition focus:border-amber-300 focus:ring-2 focus:ring-amber-500/30"
-                  />
-                </label>
-              ))}
-            </div>
+                <div className="mt-4">
+                  <label className="flex flex-col gap-2">
+                    <span className="text-sm font-medium text-zinc-300">
+                      제작 수수료 감소 (%)
+                    </span>
+                    <input
+                      inputMode="numeric"
+                      value={format(toInt(craftFeeDiscount))}
+                      onChange={(e) =>
+                        setCraftFeeDiscount(parseFormatted(e.target.value))
+                      }
+                      placeholder="예: 17"
+                      className="h-12 rounded-2xl border border-zinc-700 bg-zinc-950 px-4 text-base outline-none transition focus:border-amber-300 focus:ring-2 focus:ring-amber-500/30"
+                    />
+                  </label>
+                </div>
 
-            <div className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4 text-sm text-zinc-400">
-              <div className="mb-2 font-medium text-zinc-200">현재 기준 공식</div>
-              <div className="space-y-1 leading-6">
-                <p>
-                  {recipe.title} 1세트(10개) = 아비도스 목재 {recipe.abydos} + 부드러운 목재 {recipe.soft} +
-                  목재 {recipe.wood}
+                <p className="mt-2 text-sm text-zinc-400">
+                  숫자를 입력하면 결과가 바로 갱신됩니다.
                 </p>
-                <p>기본 제작 수수료: {format(RECIPES[target].craftFeePerSet)} 골드 / 세트</p>
-                <p>수수료 감소 적용 후: {format(recipe.craftFeePerSet)} 골드 / 세트</p>
-                <p>벌목 재료 판매 단위: 100개</p>
-                <p>완성품 판매 단위: 1개</p>
-                <p>판매 수수료: 5%</p>
-                <p>튼튼한 목재 5 → 목재 50</p>
-                <p>부드러운 목재 25 → 목재 50</p>
-                <p>목재 100 → 벌목의 가루 80</p>
-                <p>벌목의 가루 100 → 아비도스 목재 10</p>
-                <p>벌목의 가루 100 → 부드러운 목재 50</p>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                {rows.map((row) => (
+                  <label key={row.key} className="flex flex-col gap-2">
+                    <span className="text-sm font-medium text-zinc-300">
+                      {row.label}
+                    </span>
+                    <input
+                      inputMode="numeric"
+                      value={format(toInt(row.value))}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          [row.key]: parseFormatted(e.target.value),
+                        }))
+                      }
+                      placeholder="보유 개수 입력"
+                      className="h-12 rounded-2xl border border-zinc-700 bg-zinc-950 px-4 text-base outline-none transition focus:border-amber-300 focus:ring-2 focus:ring-amber-500/30"
+                    />
+                  </label>
+                ))}
+              </div>
+
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-5 text-sm text-zinc-400">
+                <div className="mb-3 text-base font-semibold text-zinc-100">
+                  현재 기준 공식
+                </div>
+
+                <div className="space-y-2 leading-8">
+                  <p>
+                    상급 아비도스 융화 재료 1세트(10개) = 아비도스 목재 43 +
+                    부드러운 목재 59 + 목재 112
+                  </p>
+                  <p>기본 제작 수수료: 520 골드 / 세트</p>
+                  <p>
+                    수수료 감소 적용 후: {format(recipe.craftFeePerSet)} 골드 /
+                    세트
+                  </p>
+                  <p>벌목 재료 판매 단위: 100개</p>
+                  <p>완성품 판매 단위: 1개</p>
+                  <p>판매 수수료: 5%</p>
+                  <p>튼튼한 목재 5 → 목재 50</p>
+                  <p>부드러운 목재 25 → 목재 50</p>
+                  <p>목재 100 → 벌목의 가루 80</p>
+                  <p>벌목의 가루 100 → 아비도스 목재 10</p>
+                  <p>벌목의 가루 100 → 부드러운 목재 50</p>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-5">
+                <div className="mb-4 text-base font-semibold text-zinc-100">
+                  제작 후 남는 재료
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+                    <div className="text-sm leading-6 text-zinc-400">
+                      아비도스 목재
+                    </div>
+                    <div className="mt-2 text-2xl font-bold text-zinc-100">
+                      {format(result.leftovers.abydos)}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+                    <div className="text-sm leading-6 text-zinc-400">
+                      부드러운 목재
+                    </div>
+                    <div className="mt-2 text-2xl font-bold text-zinc-100">
+                      {format(result.leftovers.soft)}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+                    <div className="text-sm leading-6 text-zinc-400">목재</div>
+                    <div className="mt-2 text-2xl font-bold text-zinc-100">
+                      {format(result.leftovers.wood)}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+                    <div className="text-sm leading-6 text-zinc-400">
+                      튼튼한 목재
+                    </div>
+                    <div className="mt-2 text-2xl font-bold text-zinc-100">
+                      {format(result.leftovers.sturdy)}
+                    </div>
+                  </div>
+                </div>
+
+                <p className="mt-4 text-xs text-zinc-500">
+                  남는 벌목의 가루: {format(result.powderLeft)}개
+                </p>
               </div>
             </div>
           </div>
 
           <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-5 shadow-xl backdrop-blur sm:p-6">
-            <div className="mb-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-start">
-              <div>
-                <h2 className="text-xl font-semibold">계산 결과</h2>
-                <p className="mt-1 text-sm text-zinc-400">기존 최대 제작 가이드 + 손익 판단</p>
+            <div className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-start">
+                <div>
+                  <h2 className="text-xl font-semibold">계산 결과</h2>
+                  <p className="mt-1 text-sm text-zinc-400">
+                    기존 최대 제작 가이드 + 손익 판단
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  className="h-11 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 text-sm font-medium text-amber-200 transition hover:bg-amber-500/20"
+                >
+                  결과 복사
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={handleCopy}
-                className="h-11 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 text-sm font-medium text-amber-200 transition hover:bg-amber-500/20"
+
+              <div className="flex flex-wrap gap-3">
+                <label className="flex items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-200">
+                  <input
+                    type="checkbox"
+                    checked={showPowderPlan}
+                    onChange={(e) => setShowPowderPlan(e.target.checked)}
+                    className="h-4 w-4 accent-sky-400"
+                  />
+                  벌목의 가루 우선안
+                </label>
+
+                <label className="flex items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-200">
+                  <input
+                    type="checkbox"
+                    checked={showMarketPlan}
+                    onChange={(e) => setShowMarketPlan(e.target.checked)}
+                    className="h-4 w-4 accent-amber-400"
+                  />
+                  경매장 구매 우선안
+                </label>
+              </div>
+
+              {copied && (
+                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">
+                  복사 완료! 계산 결과를 클립보드에 저장했어요.
+                </div>
+              )}
+
+              <div
+                className={`rounded-2xl border p-5 sm:p-6 ${
+                  economy.isProfit
+                    ? "border-emerald-500/30 bg-emerald-500/10"
+                    : "border-rose-500/30 bg-rose-500/10"
+                }`}
               >
-                결과 복사
-              </button>
-            </div>
+                <div className="mb-4 text-base font-semibold text-zinc-100">
+                  손익 판단
+                </div>
 
-            <div className="mb-4 flex flex-wrap gap-3">
-              <label className="flex items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-200">
-                <input
-                  type="checkbox"
-                  checked={showPowderPlan}
-                  onChange={(e) => setShowPowderPlan(e.target.checked)}
-                  className="h-4 w-4 accent-sky-400"
-                />
-                벌목의 가루 우선안
-              </label>
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+                    <div className="text-sm leading-6 text-zinc-400">
+                      재료 판매 가치
+                    </div>
+                    <div className="mt-2 text-2xl font-bold leading-tight text-zinc-100">
+                      {format(economy.rawSellValue)} 골드
+                    </div>
+                  </div>
 
-              <label className="flex items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-200">
-                <input
-                  type="checkbox"
-                  checked={showMarketPlan}
-                  onChange={(e) => setShowMarketPlan(e.target.checked)}
-                  className="h-4 w-4 accent-amber-400"
-                />
-                경매장 구매 우선안
-              </label>
-            </div>
+                  <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+                    <div className="text-sm leading-6 text-zinc-400">
+                      완성품 판매 가치
+                    </div>
+                    <div className="mt-2 text-2xl font-bold leading-tight text-zinc-100">
+                      {format(economy.craftedSellValue)} 골드
+                    </div>
+                  </div>
 
-            {copied && (
-              <div className="mb-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">
-                복사 완료! 계산 결과를 클립보드에 저장했어요.
+                  <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+                    <div className="text-sm leading-6 text-zinc-400">
+                      제작 수수료
+                    </div>
+                    <div className="mt-2 text-2xl font-bold leading-tight text-zinc-100">
+                      {format(economy.craftFee)} 골드
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+                    <div className="text-sm leading-6 text-zinc-400">
+                      남은 재료 판매 가치
+                    </div>
+                    <div className="mt-2 text-2xl font-bold leading-tight text-zinc-100">
+                      {format(economy.leftoversSellValue)} 골드
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+                  <div className="text-sm text-zinc-400">최종 비교</div>
+                  <div
+                    className={`mt-3 text-2xl font-extrabold leading-tight sm:text-3xl ${
+                      economy.isProfit ? "text-emerald-200" : "text-rose-200"
+                    }`}
+                  >
+                    {economy.isProfit
+                      ? "제작하고 판매가 더 이득"
+                      : "재료 판매가 더 이득"}
+                  </div>
+                  <div
+                    className={`mt-2 text-xl font-bold ${
+                      economy.isProfit ? "text-emerald-300" : "text-rose-300"
+                    }`}
+                  >
+                    {economy.diff >= 0 ? "+" : ""}
+                    {format(economy.diff)} 골드
+                  </div>
+                </div>
               </div>
-            )}
 
-            <div className="mb-4 rounded-2xl border border-emerald-400/40 bg-gradient-to-br from-emerald-500/20 to-amber-500/10 p-5 text-center shadow-lg shadow-emerald-900/20">
-              <div className="text-xs text-emerald-200">최대 제작 가능</div>
-              <div className="mt-2 text-5xl font-extrabold text-emerald-100">
-                {format(result.maxCraft * PRODUCT_COUNT_PER_SET)}
-                <span className="ml-1 text-2xl text-amber-300">개</span>
+              <div className="rounded-2xl border border-emerald-400/40 bg-gradient-to-br from-emerald-500/20 to-amber-500/10 p-5 text-center shadow-lg shadow-emerald-900/20">
+                <div className="text-xs text-emerald-200">최대 제작 가능</div>
+                <div className="mt-2 text-5xl font-extrabold text-emerald-100">
+                  {format(result.maxCraft * PRODUCT_COUNT_PER_SET)}
+                  <span className="ml-1 text-2xl text-amber-300">개</span>
+                </div>
+                <div className="mt-1 text-sm text-zinc-400">
+                  ({format(result.maxCraft)}세트)
+                </div>
               </div>
-              <div className="mt-1 text-sm text-zinc-400">({format(result.maxCraft)}세트)</div>
-            </div>
 
-            <div className="grid gap-3">
               <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
-                <div className="mb-3 text-sm font-semibold text-zinc-200">추천 교환 순서</div>
+                <div className="mb-3 text-sm font-semibold text-zinc-200">
+                  추천 교환 순서
+                </div>
+
                 <div className="space-y-2">
                   {steps.length === 0 ? (
                     <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-3 text-sm text-zinc-400">
@@ -752,13 +942,17 @@ export default function Page() {
                         key={step.key}
                         className="rounded-xl border border-zinc-800 bg-zinc-900 p-3 text-sm text-zinc-200"
                       >
-                        <div>
-                          <span className="mr-2 font-semibold text-amber-300">{index + 1}단계</span>
+                        <div className="leading-6">
+                          <span className="mr-2 font-semibold text-amber-300">
+                            {index + 1}단계
+                          </span>
                           {step.text}
                         </div>
 
                         {"sub" in step && step.sub && (
-                          <div className="mt-1 text-xs text-zinc-400">{step.sub}</div>
+                          <div className="mt-1 text-xs leading-5 text-zinc-400">
+                            {step.sub}
+                          </div>
                         )}
                       </div>
                     ))
@@ -767,24 +961,30 @@ export default function Page() {
               </div>
 
               <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
-                <div className="mb-3 text-sm font-semibold text-zinc-200">교환 손익 체크 (최저가 기준)</div>
+                <div className="mb-3 text-sm font-semibold text-zinc-200">
+                  교환 손익 체크 (최저가 기준)
+                </div>
+
                 <div className="space-y-2">
                   {conversionChecks.map((item) => (
                     <div
                       key={item.label}
                       className="rounded-xl border border-zinc-800 bg-zinc-900 p-3 text-sm"
                     >
-                      <div className="font-medium text-zinc-200">{item.label}</div>
-                      <div className="mt-1 text-zinc-400">
-                        교환 전 가치 {format(Math.floor(item.fromValue))} → 교환 후 가치{" "}
-                        {format(Math.floor(item.toValue))}
+                      <div className="font-medium leading-6 text-zinc-200">
+                        {item.label}
+                      </div>
+                      <div className="mt-1 leading-6 text-zinc-400">
+                        교환 전 가치 {format(Math.floor(item.fromValue))} → 교환
+                        후 가치 {format(Math.floor(item.toValue))}
                       </div>
                       <div
                         className={`mt-1 font-semibold ${
                           item.isProfit ? "text-emerald-300" : "text-rose-300"
                         }`}
                       >
-                        {item.isProfit ? "이득" : "손해"} ({item.diff >= 0 ? "+" : ""}
+                        {item.isProfit ? "이득" : "손해"} (
+                        {item.diff >= 0 ? "+" : ""}
                         {format(Math.floor(item.diff))} 골드)
                       </div>
                     </div>
@@ -795,16 +995,26 @@ export default function Page() {
               <div className="grid gap-3 lg:grid-cols-2">
                 {showPowderPlan && (
                   <div className="rounded-2xl border border-sky-500/20 bg-zinc-950/70 p-4">
-                    <div className="mb-3 text-sm font-semibold text-sky-300">부드러운 목재 충당 (벌목의 가루)</div>
-                    <div className="space-y-2 text-sm text-zinc-300">
-                      <p>다음 1세트 기준 부족한 부드러운 목재: {format(nextSoftShortage)}개</p>
-                      <p>벌목의 가루 → 부드러운 목재: {format(nextPowderToSoft)}회</p>
+                    <div className="mb-3 text-sm font-semibold text-sky-300">
+                      부드러운 목재 충당 (벌목의 가루)
+                    </div>
+
+                    <div className="space-y-2 text-sm leading-6 text-zinc-300">
+                      <p>
+                        다음 1세트 기준 부족한 부드러운 목재:{" "}
+                        {format(nextSoftShortage)}개
+                      </p>
+                      <p>
+                        벌목의 가루 → 부드러운 목재: {format(nextPowderToSoft)}
+                        회
+                      </p>
                       <p>사용한 벌목의 가루: {format(nextPowderUsed)}개</p>
                       <p>확보한 부드러운 목재: {format(nextSoftMade)}개</p>
 
                       {nextPowderToSoft === 0 && (
                         <p className="text-xs text-zinc-500">
-                          현재 남은 부드러운 목재로 다음 1세트도 바로 제작 가능해요.
+                          현재 남은 부드러운 목재로 다음 1세트도 바로 제작
+                          가능해요.
                         </p>
                       )}
                     </div>
@@ -813,16 +1023,22 @@ export default function Page() {
 
                 {showMarketPlan && (
                   <div className="rounded-2xl border border-amber-500/20 bg-zinc-950/70 p-4">
-                    <div className="mb-3 text-sm font-semibold text-amber-300">경매장 구매</div>
+                    <div className="mb-3 text-sm font-semibold text-amber-300">
+                      경매장 구매
+                    </div>
 
-                    <div className="space-y-2 text-sm text-zinc-300">
-                      <p>다음 1세트 기준 부족한 부드러운 목재: {format(nextSoftShortage)}개</p>
+                    <div className="space-y-2 text-sm leading-6 text-zinc-300">
+                      <p>
+                        다음 1세트 기준 부족한 부드러운 목재:{" "}
+                        {format(nextSoftShortage)}개
+                      </p>
                       <p>구매 세트 수: {format(nextMarketSets)}세트</p>
                       <p>총 구매량: {format(nextMarketBought)}개</p>
 
                       {nextMarketSets === 0 && (
                         <p className="text-xs text-zinc-500">
-                          현재 남은 부드러운 목재로 다음 1세트도 바로 제작 가능해요.
+                          현재 남은 부드러운 목재로 다음 1세트도 바로 제작
+                          가능해요.
                         </p>
                       )}
                     </div>
@@ -833,7 +1049,9 @@ export default function Page() {
                           구매 없음
                         </div>
                       ) : (
-                        Array.from({ length: Math.min(nextMarketSets, 12) }).map((_, index) => (
+                        Array.from({
+                          length: Math.min(nextMarketSets, 12),
+                        }).map((_, index) => (
                           <div
                             key={index}
                             className="rounded-md border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200"
@@ -858,70 +1076,6 @@ export default function Page() {
                   표시할 전략을 선택해주세요.
                 </div>
               )}
-
-              <div
-                className={`rounded-2xl border p-4 ${
-                  economy.isProfit
-                    ? "border-emerald-500/30 bg-emerald-500/10"
-                    : "border-rose-500/30 bg-rose-500/10"
-                }`}
-              >
-                <div className="mb-2 text-sm font-semibold text-zinc-200">손익 판단</div>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-3">
-                    <div className="text-zinc-400">재료 판매 가치</div>
-                    <div className="mt-1 text-lg font-semibold">{format(economy.rawSellValue)} 골드</div>
-                  </div>
-                  <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-3">
-                    <div className="text-zinc-400">완성품 판매 가치</div>
-                    <div className="mt-1 text-lg font-semibold">{format(economy.craftedSellValue)} 골드</div>
-                  </div>
-                  <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-3">
-                    <div className="text-zinc-400">제작 수수료</div>
-                    <div className="mt-1 text-lg font-semibold">{format(economy.craftFee)} 골드</div>
-                  </div>
-                  <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-3">
-                    <div className="text-zinc-400">남은 재료 판매 가치</div>
-                    <div className="mt-1 text-lg font-semibold">{format(economy.leftoversSellValue)} 골드</div>
-                  </div>
-                </div>
-
-                <div className="mt-4 rounded-xl border border-zinc-800 bg-zinc-900 p-4">
-                  <div className="text-sm text-zinc-400">최종 비교</div>
-                  <div
-                    className={`mt-2 text-2xl font-bold ${
-                      economy.isProfit ? "text-emerald-200" : "text-rose-200"
-                    }`}
-                  >
-                    {economy.isProfit ? "제작하고 판매가 더 이득" : "재료 판매가 더 이득"} (
-                    {economy.diff >= 0 ? "+" : ""}
-                    {format(economy.diff)} 골드)
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
-                <div className="mb-3 text-sm font-semibold text-zinc-200">제작 후 남는 재료</div>
-                <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-                  <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-3">
-                    <div className="text-zinc-400">아비도스 목재</div>
-                    <div className="mt-1 text-lg font-semibold">{format(result.leftovers.abydos)}</div>
-                  </div>
-                  <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-3">
-                    <div className="text-zinc-400">부드러운 목재</div>
-                    <div className="mt-1 text-lg font-semibold">{format(result.leftovers.soft)}</div>
-                  </div>
-                  <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-3">
-                    <div className="text-zinc-400">목재</div>
-                    <div className="mt-1 text-lg font-semibold">{format(result.leftovers.wood)}</div>
-                  </div>
-                  <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-3">
-                    <div className="text-zinc-400">튼튼한 목재</div>
-                    <div className="mt-1 text-lg font-semibold">{format(result.leftovers.sturdy)}</div>
-                  </div>
-                </div>
-                <p className="mt-3 text-xs text-zinc-500">남는 벌목의 가루: {format(result.powderLeft)}개</p>
-              </div>
             </div>
           </div>
         </section>
